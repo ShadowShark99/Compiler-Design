@@ -1,0 +1,84 @@
+program is the PROGRAM keyword
+var is the VAR keyword
+SMALLER is an ident
+as is the AS keyword
+int is the INT keyword
+; is the SC symbol
+var is the VAR keyword
+BIGGER is an ident
+as is the AS keyword
+int is the INT keyword
+; is the SC symbol
+var is the VAR keyword
+TEMP is an ident
+as is the AS keyword
+int is the INT keyword
+; is the SC symbol
+begin is the BEGIN keyword
+BIGGER is an ident
+:= is the ASGN symbol
+readInt is the READINT build-in procedure
+; is the SC symbol
+SMALLER is an ident
+:= is the ASGN symbol
+readInt is the READINT build-in procedure
+; is the SC symbol
+if is the IF keyword
+SMALLER is an ident
+> is an OP4 operator
+BIGGER is an ident
+then is the THEN keyword
+TEMP is an ident
+:= is the ASGN symbol
+SMALLER is an ident
+; is the SC symbol
+TEMP1 is an ident
+:= is the ASGN symbol
+2147483648 is a num
+; is the SC symbol
+SMALLER is an ident
+:= is the ASGN symbol
+BIGGER is an ident
+; is the SC symbol
+BIGGER is an ident
+:= is the ASGN symbol
+TEMP is an ident
+; is the SC symbol
+end is the END keyword
+; is the SC symbol
+while is the WHILE keyword
+SMALLER is an ident
+> is an OP4 operator
+0 is a num
+do is the DO keyword
+BIGGER is an ident
+:= is the ASGN symbol
+BIGGER is an ident
+- is an OP3 operator
+SMALLER is an ident
+; is the SC symbol
+if is the IF keyword
+SMALLER is an ident
+> is an OP4 operator
+BIGGER is an ident
+then is the THEN keyword
+TEMP is an ident
+:= is the ASGN symbol
+SMALLER is an ident
+; is the SC symbol
+SMALLER is an ident
+:= is the ASGN symbol
+BIGGER is an ident
+; is the SC symbol
+BIGGER is an ident
+:= is the ASGN symbol
+TEMP is an ident
+; is the SC symbol
+end is the END keyword
+; is the SC symbol
+end is the END keyword
+; is the SC symbol
+writeInt is the WRITEINT built-in procedure
+BIGGER is an ident
+; is the SC symbol
+end is the END keyword
