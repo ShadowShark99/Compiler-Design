@@ -2,7 +2,11 @@
 */
 %{
   #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
+  #include "tl13bnf.h"
   #include "tl13bnf.tab.h"
+  
   //extern int yylval;
 %}
 
@@ -31,9 +35,20 @@ readInt        return(READINT);
 "*"|"div"|"mod"       { return(OP2); }
 "+"|"-"                 { return(OP3); }
 "="|"!="|"<"|">"|"<="|">=" { return(OP4); }
-[1-9][0-9]*|0      return(num);
-"false" | "true"      return(boollit);
-[A-Z][A-Z0-9]*        return(ident);
+[1-9][0-9]*|0      {
+                    yylval.numVal = atoi(yytext); 
+                    return(num);
+                    }
+"false"|"true"      {
+                        yylval.sVal = malloc(strlen(yytext)+1);
+                        strncpy(yylval.sVal, yytext, strlen(yytext));
+                        return(boollit);
+                      }
+[A-Z][A-Z0-9]*        {
+                        yylval.sVal = malloc(strlen(yytext)+1);
+                        strncpy(yylval.sVal, yytext, strlen(yytext));
+                        return(ident);
+  }
 [ \t\n]        ;
 .     printf("error: %s not recognized\n", yytext);
 

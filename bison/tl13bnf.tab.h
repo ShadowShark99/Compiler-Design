@@ -39,54 +39,54 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     LP = 258,
-     RP = 259,
-     ASGN = 260,
-     SC = 261,
-     OP2 = 262,
-     OP3 = 263,
-     OP4 = 264,
-     IF = 265,
-     THEN = 266,
-     ELSE = 267,
+     READINT = 258,
+     WRITEINT = 259,
+     BOOL = 260,
+     INT = 261,
+     AS = 262,
+     VAR = 263,
+     PROGRAM = 264,
+     DO = 265,
+     WHILE = 266,
+     END = 267,
      BEGIN_ = 268,
-     END = 269,
-     WHILE = 270,
-     DO = 271,
-     PROGRAM = 272,
-     VAR = 273,
-     AS = 274,
-     INT = 275,
-     BOOL = 276,
-     WRITEINT = 277,
-     READINT = 278,
+     ELSE = 269,
+     THEN = 270,
+     IF = 271,
+     OP4 = 272,
+     OP3 = 273,
+     OP2 = 274,
+     SC = 275,
+     ASGN = 276,
+     RP = 277,
+     LP = 278,
      num = 279,
      boollit = 280,
      ident = 281
    };
 #endif
 /* Tokens.  */
-#define LP 258
-#define RP 259
-#define ASGN 260
-#define SC 261
-#define OP2 262
-#define OP3 263
-#define OP4 264
-#define IF 265
-#define THEN 266
-#define ELSE 267
+#define READINT 258
+#define WRITEINT 259
+#define BOOL 260
+#define INT 261
+#define AS 262
+#define VAR 263
+#define PROGRAM 264
+#define DO 265
+#define WHILE 266
+#define END 267
 #define BEGIN_ 268
-#define END 269
-#define WHILE 270
-#define DO 271
-#define PROGRAM 272
-#define VAR 273
-#define AS 274
-#define INT 275
-#define BOOL 276
-#define WRITEINT 277
-#define READINT 278
+#define ELSE 269
+#define THEN 270
+#define IF 271
+#define OP4 272
+#define OP3 273
+#define OP2 274
+#define SC 275
+#define ASGN 276
+#define RP 277
+#define LP 278
 #define num 279
 #define boollit 280
 #define ident 281
@@ -96,12 +96,14 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 11 "tl13bnf.y"
+#line 14 "tl13bnf.y"
 {
-  char *sval;
+  int numVal;
+  char* sVal;
+  nodeType *nPtr;
 }
 /* Line 1529 of yacc.c.  */
-#line 105 "tl13bnf.tab.h"
+#line 107 "tl13bnf.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

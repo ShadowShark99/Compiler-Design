@@ -1,7 +1,10 @@
 /************************  calc1.y           *******************/
 
 %{
+#include "tl13bnf.h"
 #include <stdio.h>
+#include <stdarg.h>
+
 int yylex(void);
 void yyerror(char *);
 %}
@@ -9,11 +12,16 @@ void yyerror(char *);
 //symbols
 %union
 {
-  char *sval;
+  int numVal;
+  char* sVal;
+  nodeType *nPtr;
 };
 %start program
-%token LP RP ASGN SC OP2 OP3 OP4 IF THEN ELSE BEGIN_ END WHILE DO PROGRAM VAR AS INT BOOL WRITEINT READINT
-%token num boollit ident
+%left LP RP ASGN SC OP2 OP3 OP4 IF THEN ELSE BEGIN_ END WHILE DO PROGRAM VAR AS INT BOOL WRITEINT READINT
+%token <numVal> num
+%token <sVal> boollit ident
+
+%type <nPtr> program declarations type statementSequence statement assignment ifStatement elseClause whileStatement writeInt expression simpleExpression term factor
 /* %left declarations
 %left type
 %left statementSequence
@@ -29,69 +37,123 @@ void yyerror(char *);
  %left '|' 
  %left '&' 
  %left '+' '-' 
- 
+ */
 %%                   /* beginning of rules section */
-program:  PROGRAM declarations BEGIN_ statementSequence END
+program:  PROGRAM declarations BEGIN_ statementSequence END {$$ = opr(PROGRAM, 2, $2, $4);}
          ;
-declarations:    VAR ident AS type SC declarations
+declarations:    VAR ident AS type SC declarations {$$ = opr(VAR, 3, id($2), $4, $6); }
          |
-         /*empty */
+         /*empty */ {$$ = NULL;}
          ;
-type:    INT
+type:    INT {$$ = NULL; }
          |
-         BOOL
+         BOOL {$$ = NULL; }
          ;
-statementSequence: statement SC statementSequence
+statementSequence: statement SC statementSequence {$$ = opr(SC, 2, $1, $3); }
                     |
-                    /*empty */
+                    /*empty */{$$ = NULL;}
                     ;
-statement: assignment
+statement: assignment { $$ = $1; }
            |
-           ifStatement
+           ifStatement { $$ = $1; }
            |
-           whileStatement
+           whileStatement { $$ = $1; }
            |
-           writeInt
+           writeInt { $$ = $1; }
            ;
-assignment: ident ASGN expression
+assignment: ident ASGN expression {$$ = opr(ASGN, 2, id($1), $3); }
             |
-            ident ASGN READINT
+            ident ASGN READINT {$$ = id($1); }
             ;
-ifStatement: IF expression THEN statementSequence elseClause END
+ifStatement: IF expression THEN statementSequence elseClause END {$$ = opr(IF, 3, $2, $4, $5); }
             ;
-elseClause: ELSE statementSequence
+elseClause: ELSE statementSequence {$$ = $2; }
             |
-  /*empty */
+  /*empty */{$$ = NULL; }
             ;
-whileStatement: WHILE expression DO statementSequence END
+whileStatement: WHILE expression DO statementSequence END {$$ = opr(WHILE, 2, $2, $4); }
             ;
-writeInt: WRITEINT expression
+writeInt: WRITEINT expression {$$ = $2; }
           ;
 
-expression: simpleExpression
+expression: simpleExpression {$$ = $1; }
             |
-            simpleExpression OP4 simpleExpression
+            simpleExpression OP4 simpleExpression {$$ = opr(OP4, 2, $1, $3); }
             ;
 
-simpleExpression: term OP3 term
+simpleExpression: term OP3 term {$$ = opr(OP3, 2, $1, $3); }
                   |
-                  factor
+                  factor {$$ = $1; }
                   ;
 
-term: factor OP2 factor
+term: factor OP2 factor {$$ = opr(OP2, 2, $1, $3); }
       |
-      factor
+      factor { $$ = $1; }
       ;
-factor: ident
+factor: ident { $$ = id($1); }
       |
-      num
+      num {$$ = nf($1); }
       |
-      boollit
+      boollit {$$ = bb($1); }
       |
-      LP expression RP
+      LP expression RP { $$ = $2; }
       ;
 
 %%
+
+nodeType *nf(int val){
+  nodeType *p;
+  if((p = malloc(sizeof(numNodeType))) == NULL)
+  {
+    yyerror("out of memory");
+  }
+
+  p->type = typeNum;
+  p->n.value = val;
+  printf("created numNode: %d\n", val);
+  return p;
+}
+
+nodeType *id(char* s){
+  nodeType* p;
+  if((p = malloc(sizeof(idNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeId;
+  p->id.str = s;
+  printf("created idNode: %s\n", s);
+  return p;
+}
+
+nodeType *bb(char* s){
+  nodeType* p;
+  if((p = malloc(sizeof(bNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeB;
+  p->b.tf = s;
+  printf("created boolNode: %s\n", s);
+  return p;
+}
+
+nodeType *opr(int oper, int nops, ...) {
+	va_list ap;
+	nodeType *p;
+	size_t size;
+	int i;
+	/* allocate node */
+	size = sizeof(oprNodeType) + (nops - 1) * sizeof(nodeType*);
+	if ((p = malloc(size)) == NULL)
+		yyerror("out of memory");
+	/* copy information */
+	p->type = typeOpr;
+	p->opr.oper = oper;
+	p->opr.nops = nops;
+	va_start(ap, nops);
+	for (i = 0; i < nops; i++)
+		p->opr.op[i] = va_arg(ap, nodeType*);
+	va_end(ap);
+  printf("created innerNode: \n");
+	return p;
+}
 
 int main()
 {
