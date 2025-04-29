@@ -4,7 +4,6 @@
 #include "tl13bnf.h"
 #include <stdio.h>
 #include <stdarg.h>
-
 int yylex(void);
 void yyerror(char *);
 %}
@@ -39,64 +38,64 @@ void yyerror(char *);
  %left '+' '-' 
  */
 %%                   /* beginning of rules section */
-program:  PROGRAM declarations BEGIN_ statementSequence END {$$ = opr(PROGRAM, 2, $2, $4);}
+program:  PROGRAM declarations BEGIN_ statementSequence END {$$ = prgm($2, $4); ex($$);}
          ;
-declarations:    VAR ident AS type SC declarations {$$ = opr(VAR, 3, id($2), $4, $6); }
+declarations:    VAR ident AS type SC declarations {$$ = decl(id($2), $4, $6); }
          |
          /*empty */ {$$ = NULL;}
          ;
-type:    INT {$$ = NULL; }
+type:    INT {$$ = type(INT); }
          |
-         BOOL {$$ = NULL; }
+         BOOL {$$ = type(BOOL); }
          ;
-statementSequence: statement SC statementSequence {$$ = opr(SC, 2, $1, $3); }
+statementSequence: statement SC statementSequence {$$ = stmtSeq($1, $3); }
                     |
                     /*empty */{$$ = NULL;}
                     ;
-statement: assignment { $$ = $1; }
+statement: assignment { $$ = stmt($1); }
            |
-           ifStatement { $$ = $1; }
+           ifStatement { $$ = stmt($1); }
            |
-           whileStatement { $$ = $1; }
+           whileStatement { $$ = stmt($1); }
            |
-           writeInt { $$ = $1; }
+           writeInt { $$ = stmt($1); }
            ;
-assignment: ident ASGN expression {$$ = opr(ASGN, 2, id($1), $3); }
+assignment: ident ASGN expression {$$ = asgn(id($1), $3); }
             |
-            ident ASGN READINT {$$ = id($1); }
+            ident ASGN READINT {$$ = asgn(id($1), NULL); }
             ;
-ifStatement: IF expression THEN statementSequence elseClause END {$$ = opr(IF, 3, $2, $4, $5); }
+ifStatement: IF expression THEN statementSequence elseClause END {$$ = if0($2, $4, $5); }
             ;
-elseClause: ELSE statementSequence {$$ = $2; }
+elseClause: ELSE statementSequence {$$ = else0($2); }
             |
   /*empty */{$$ = NULL; }
             ;
-whileStatement: WHILE expression DO statementSequence END {$$ = opr(WHILE, 2, $2, $4); }
+whileStatement: WHILE expression DO statementSequence END {$$ = while0($2, $4); }
             ;
-writeInt: WRITEINT expression {$$ = $2; }
+writeInt: WRITEINT expression {$$ = writeInt($2); }
           ;
 
-expression: simpleExpression {$$ = $1; }
+expression: simpleExpression {$$ = expr($1, NULL); }
             |
-            simpleExpression OP4 simpleExpression {$$ = opr(OP4, 2, $1, $3); }
+            simpleExpression OP4 simpleExpression {$$ = expr($1, $3); }
             ;
 
-simpleExpression: term OP3 term {$$ = opr(OP3, 2, $1, $3); }
+simpleExpression: term OP3 term {$$ = simpExpr($1, $3); }
                   |
-                  factor {$$ = $1; }
+                  term {$$ = simpExpr($1, NULL); }
                   ;
 
-term: factor OP2 factor {$$ = opr(OP2, 2, $1, $3); }
+term: factor OP2 factor {$$ = term($1, $3); }
       |
-      factor { $$ = $1; }
+      factor { $$ = term($1,NULL); }
       ;
-factor: ident { $$ = id($1); }
+factor: ident { $$ = factor(id($1)); }
       |
-      num {$$ = nf($1); }
+      num {$$ = factor(nf($1)); }
       |
-      boollit {$$ = bb($1); }
+      boollit {$$ = factor(bb($1)); }
       |
-      LP expression RP { $$ = $2; }
+      LP expression RP { $$ = factor($2); }
       ;
 
 %%
@@ -153,6 +152,168 @@ nodeType *opr(int oper, int nops, ...) {
 	va_end(ap);
   printf("created innerNode: \n");
 	return p;
+}
+
+nodeType *prgm(nodeType *decl, nodeType *stmtSeq) {
+	nodeType *p;
+	if((p = malloc(sizeof(prgmNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typePrgm;
+  p->p.decl = decl;
+  p->p.stmtSeq = stmtSeq;
+  printf("created prgmNode: \n");
+  return p;
+}
+
+nodeType *decl(nodeType *typ, nodeType *id, nodeType *decl) {
+	nodeType *p;
+	if((p = malloc(sizeof(declNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeDecl;
+  p->d.typ = typ;
+  p->d.id = id;
+  p->d.decl = decl;
+  printf("created declNode: \n");
+  return p;
+}
+
+nodeType *type(int t) {
+	nodeType *p;
+	if((p = malloc(sizeof(typeNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeType;
+  p->ty.t = t;
+  printf("created typeNode: \n");
+  return p;
+}
+
+nodeType *stmtSeq(nodeType *stmt, nodeType *stmtSeq) {
+	nodeType *p;
+	if((p = malloc(sizeof(stmtSeqNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeStmtSeq;
+  p->ss.stmt = stmt;
+  p->ss.stmtSeq = stmtSeq;
+  printf("created stmtSeqNode: \n");
+  return p;
+}
+
+nodeType *stmt(nodeType *stmtType) {
+	nodeType *p;
+	if((p = malloc(sizeof(stmtNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeStmt;
+  p->s.stmtType = stmtType;
+  p->s.childType = stmtType->type;
+  printf("created stmtNode: \n");
+  return p;
+}
+
+nodeType *asgn(nodeType *id, nodeType *expr) {
+	nodeType *p;
+	if((p = malloc(sizeof(asgnNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeAsgn;
+  p->a.id = id;
+  p->a.expr = expr;
+  printf("created asgnNode: \n");
+  return p;
+}
+
+nodeType *if0(nodeType *expr, nodeType *stmtSeq, nodeType *else0) {
+	nodeType *p;
+	if((p = malloc(sizeof(ifNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeIf;
+  p->i.expr = expr;
+  p->i.stmtSeq = stmtSeq;
+  p->i.else0 = else0;
+  printf("created ifNode: \n");
+  return p;
+}
+
+nodeType *else0(nodeType *stmtSeq) {
+	nodeType *p;
+	if((p = malloc(sizeof(elseNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeElse;
+  p->el.stmtSeq = stmtSeq;
+  printf("created elseNode: \n");
+  return p;
+}
+
+nodeType *while0(nodeType *expr, nodeType *stmtSeq) {
+	nodeType *p;
+	if((p = malloc(sizeof(whileNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeWhile;
+  p->w.expr = expr;
+  p->w.stmtSeq = stmtSeq;
+  printf("created exprNode: \n");
+  return p;
+}
+
+nodeType *writeInt(nodeType *expr) {
+	nodeType *p;
+	if((p = malloc(sizeof(writeIntNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeWriteInt;
+  p->wi.expr = expr;
+  printf("created writeIntNode: \n");
+  return p;
+}
+
+nodeType *expr(nodeType *simpExpr0, nodeType *simpExpr1) {
+	nodeType *p;
+	if((p = malloc(sizeof(exprNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeExpr;
+  p->ex.simpExpr0 = simpExpr0;
+  p->ex.simpExpr1 = simpExpr1;
+  p->ex.numOps = 2;
+  if(simpExpr1 == NULL)
+    p->ex.numOps = 1;
+  printf("created exprNode: \n");
+  return p;
+}
+
+nodeType *simpExpr(nodeType *term0, nodeType *term1) {
+	nodeType *p;
+	if((p = malloc(sizeof(simpExprNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeSimpExpr;
+  p->se.term0 = term0;
+  p->se.term1 = term1;
+  p->se.numOps = 2;
+  if(term1 == NULL)
+    p->se.numOps = 1;
+  printf("created simpExprNode: \n");
+  return p;
+}
+
+nodeType *term(nodeType *factor0, nodeType *factor1) {
+	nodeType *p;
+	if((p = malloc(sizeof(termNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeTerm;
+  p->te.factor0 = factor0;
+  p->te.factor1 = factor1;
+  p->te.numOps = 2;
+  if(factor1 == NULL)
+    p->te.numOps = 1;
+  printf("created termNode: \n");
+  return p;
+}
+
+nodeType *factor(nodeType *fn) {
+	nodeType *p;
+	if((p = malloc(sizeof(factorNodeType)))==NULL)
+    yyerror("out of memory");
+  p->type = typeFactor;
+  p->f.fn = fn;
+  p->f.childType = fn->type;
+  printf("created factorNode: \n");
+  return p;
 }
 
 int main()
